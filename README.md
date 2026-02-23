@@ -157,6 +157,88 @@ INSERT INTO products VALUES ('Test');
 
 ---
 
+### ❗ Replica_IO_Running: No
+
+```sql
+SHOW REPLICA STATUS\G
+```
+
+다음과 같이 나오는 경우:
+
+```
+Replica_IO_Running: No
+Replica_SQL_Running: Yes
+```
+
+원인:
+
+* Replica가 Source의 Binary Log를 읽지 못하는 상태
+* Binary Log 파일명 또는 Position 값 불일치
+* Source 재시작으로 인한 Binlog 변경
+
+해결:
+
+Source에서 현재 로그 위치 확인
+
+```sql
+SHOW BINARY LOG STATUS;
+```
+
+예시 결과:
+
+```
+File: mysql-bin.000002
+Position: 2054
+```
+
+Replica에서 로그 위치 재설정
+
+```sql
+STOP REPLICA;
+
+CHANGE REPLICATION SOURCE TO
+  SOURCE_LOG_FILE='mysql-bin.000002',
+  SOURCE_LOG_POS=2054;
+
+START REPLICA;
+```
+
+재확인
+
+```sql
+SHOW REPLICA STATUS\G
+```
+
+정상 상태:
+
+```
+Replica_IO_Running: Yes
+Replica_SQL_Running: Yes
+```
+
+---
+
+### ❗ Replication 초기 설정 필요
+
+원인:
+
+* Replica에 Source 정보가 아직 설정되지 않음
+* 잘못된 로그 파일 또는 Position 값 사용
+
+해결:
+
+```sql
+CHANGE REPLICATION SOURCE TO
+  SOURCE_HOST='mysql-source',
+  SOURCE_USER='gugu',
+  SOURCE_PASSWORD='1234',
+  SOURCE_LOG_FILE='mysql-bin.000001',
+  SOURCE_LOG_POS=349;
+
+START REPLICA;
+```
+
+
 ## 💡 Lessons Learned
 
 * 지연 복제는 하드웨어 장애 대응 기술이 아니다.
